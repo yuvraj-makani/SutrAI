@@ -60,7 +60,7 @@ async function speakText(text) {
     try {
         showStatus("Generating voice...");
 
-        const response = await fetch(`${API_BASE}/api/speak`, {
+        const response = await fetch(`${API_BASE}/api/tts`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -155,6 +155,7 @@ async function transcribeAudio(audioBlob) {
         showStatus("Voice Input");
 
         messageInput.dispatchEvent(new Event("input"));
+        sendMessage();
 
     } catch (error) {
         console.error("STT Error:", error);

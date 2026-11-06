@@ -1,6 +1,7 @@
 
 import os
 import httpx
+import subprocess
 
 from fastapi import UploadFile, File, HTTPException
 from dotenv import load_dotenv
@@ -52,6 +53,7 @@ def health_check():
         "status": "healthy"
     }
 
+
 @app.post("/api/transcribe")
 async def transcribe_audio(audio_file: UploadFile = File(...)):
     if not GNANI_API_KEY:
@@ -68,18 +70,45 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
             detail="Audio file is empty"
         )
 
+    # Convert WebM audio to WAV using FFmpeg
+    try:
+        conversion = subprocess.run(
+            [
+                "ffmpeg",
+                "-i", "pipe:0",
+                "-ac", "1",
+                "-ar", "16000",
+                "-f", "wav",
+                "pipe:1"
+            ],
+            input=audio_content,
+            capture_output=True,
+            check=True
+        )
+
+        wav_content = conversion.stdout
+
+    except subprocess.CalledProcessError as e:
+        print("FFmpeg Error:", e.stderr.decode(errors="ignore"))
+
+        raise HTTPException(
+            status_code=400,
+            detail="Audio conversion failed"
+        )
+
     files = {
         "audio_file": (
-            audio_file.filename or "audio.mp3",
-            audio_content,
-            audio_file.content_type or "application/octet-stream"
+            "recording.wav",
+            wav_content,
+            "audio/wav"
         )
     }
 
     data = {
-        "model": "prisma-v3.0",
         "language_code": "hi-IN",
-        "format": "transcribe"
+        "preferred_language": "hi-IN",
+        "format": "transcribe",
+        "itn_native_numerals": "true"
     }
 
     headers = {
@@ -98,6 +127,8 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
         response.raise_for_status()
         result = response.json()
 
+        print("Gnani Response:", result)
+
         return {
             "success": True,
             "transcript": result.get("transcript"),
@@ -106,16 +137,22 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
         }
 
     except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=e.response.status_code,
-            detail="Gnani transcription API failed"
-        )
+        print("Gnani API Status:", e.response.status_code)
+        print("Gnani API Error:", e.response.text)
 
-    except httpx.RequestError:
         raise HTTPException(
             status_code=502,
-            detail="Unable to connect to Gnani API"
+            detail=f"Gnani API Error: {e.response.status_code} - {e.response.text}"
         )
+
+    except httpx.RequestError as e:
+        print("Gnani Connection Error:", str(e))
+
+        raise HTTPException(
+            status_code=502,
+            detail=f"Unable to connect to Gnani API: {str(e)}"
+        )
+
 
     
 # Text-to-Speech Request Model
