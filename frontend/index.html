@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SutrAI — Voice First AI</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div>
+                    <h2>SutrAI</h2>
+                    <span>Voice Intelligence</span>
+                </div>
+            </div>
+
+            <button class="new-chat-btn" id="newChatBtn">
+                <span>＋</span> New Conversation
+            </button>
+
+            <div class="sidebar-section">
+                <p class="section-label">YOUR SPACE</p>
+
+                <div class="sidebar-item active">
+                    <span>◈</span> AI Assistant
+                </div>
+
+                <div class="sidebar-item">
+                    <span>◷</span> Recent Activity
+                </div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="profile">
+                    <div class="avatar">Y</div>
+                    <div>
+                        <strong>Yuvraj</strong>
+                        <small>Personal Workspace</small>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Top Navbar -->
+            <header class="topbar">
+
+                <div class="topbar-left">
+                    <span class="status-dot"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+
+                <div class="topbar-right">
+                    <span class="language-badge">🇮🇳 Hindi • hi-IN</span>
+                </div>
+
+            </header>
+
+            <!-- Chat Area -->
+            <section class="chat-area" id="chatArea">
+
+                <div class="welcome-screen" id="welcomeScreen">
+
+                    <div class="welcome-icon">
+                        <div class="orb"></div>
+                    </div>
+
+                    <span class="welcome-label">WELCOME TO SUTRAI</span>
+
+                    <h1>
+                        Your thoughts,<br>
+                        <span>in every voice.</span>
+                    </h1>
+
+                    <p>
+                        Namaste! Main SutrAI hoon.<br>
+                        Aap mujhse Hindi mein baat kar sakte hain.
+                    </p>
+
+                    <div class="suggestion-cards">
+
+                        <button class="suggestion-card"
+                                data-prompt="Namaste SutrAI">
+                            <span>💬</span>
+                            <strong>Say Hello</strong>
+                            <small>Start a conversation</small>
+                        </button>
+
+                        <button class="suggestion-card"
+                                data-prompt="Aaj ka din productive kaise banau?">
+                            <span>✨</span>
+                            <strong>Get Inspired</strong>
+                            <small>Explore something new</small>
+                        </button>
+
+                        <button class="suggestion-card"
+                                data-prompt="Hindi mein ek motivational quote sunao">
+                            <span>🎧</span>
+                            <strong>Listen to AI</strong>
+                            <small>Experience voice output</small>
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- Input Area -->
+            <footer class="input-section">
+
+                <div class="input-box">
+
+                    <textarea
+                        id="messageInput"
+                        placeholder="Yahan apna message likho..."
+                        rows="1"
+                    ></textarea>
+
+                    <div class="input-actions">
+
+                        <div class="left-actions">
+
+                            <button class="action-btn mic-btn"
+                                    id="micBtn"
+                                    title="Voice Input">
+                                🎙️
+                            </button>
+
+                            <span id="recordingStatus">
+                                Voice Input
+                            </span>
+
+                        </div>
+
+                        <div class="right-actions">
+
+                            <button class="action-btn send-btn"
+                                    id="sendBtn"
+                                    title="Send Message">
+                                ↑
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <p class="footer-note">
+                    SutrAI can make mistakes. Verify important information.
+                </p>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+    <!-- Audio Player -->
+    <audio id="audioPlayer" controls hidden></audio>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
