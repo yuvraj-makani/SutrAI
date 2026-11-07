@@ -2,6 +2,7 @@
 import os
 import httpx
 import subprocess
+import json
 from google import genai
 from dotenv import load_dotenv
 from fastapi import UploadFile, File, HTTPException
@@ -14,6 +15,20 @@ from fastapi import FastAPI
 
 # Load environment variables from .env
 load_dotenv()
+
+MEMORY_FILE = "chat_memory.json"
+
+def load_memory():
+    if not os.path.exists(MEMORY_FILE):
+        return {}
+
+    with open(MEMORY_FILE, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def save_memory(memory):
+    with open(MEMORY_FILE, "w", encoding="utf-8") as file:
+        json.dump(memory, file, ensure_ascii=False, indent=2)
 
 gemini_client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"),
@@ -230,15 +245,17 @@ def generate_speech(request: TTSRequest):
 
 class ChatRequest(BaseModel):
     message: str
-    history: list[dict] = []
+    session_id: str
 
 @app.post("/api/chat")
 def chat_with_gemini(request: ChatRequest):
+    memory = load_memory()
+    history = memory.get(request.session_id, [])
     try:
         response = gemini_client.models.generate_content(
             model="gemini-3.5-flash-lite",
             contents=[
-                *request.history,
+                *history,
                 {"role": "user", "parts": [{"text": request.message}]}
             ],
             config=types.GenerateContentConfig(
@@ -247,7 +264,18 @@ def chat_with_gemini(request: ChatRequest):
         )
     )
 )
+        history.append({
+            "role": "user",
+            "parts": [{"text": request.message}]
+        })
 
+        history.append({
+       "role": "model",
+       "parts": [{"text": response.text}]
+        })
+
+        memory[request.session_id] = history
+        save_memory(memory)
         return {"reply": response.text}
 
     except Exception as e:

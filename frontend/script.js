@@ -1,7 +1,12 @@
 
 const API_BASE = "http://127.0.0.1:8000";
 let chatHistory = [];
+let sessionId = localStorage.getItem("sutrai_session_id");
 
+if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("sutrai_session_id", sessionId);
+}
 // DOM Elements
 const chatArea = document.getElementById("chatArea");
 const welcomeScreen = document.getElementById("welcomeScreen");
@@ -130,8 +135,8 @@ async function sendMessage() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                    message: text,
-                    history: chatHistory
+                message: text,
+                session_id: sessionId
             })
         });
 
@@ -286,6 +291,8 @@ async function toggleRecording() {
 function newConversation() {
     chatArea.innerHTML = "";
     chatHistory = [];
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("sutrai_session_id", sessionId);
 
     if (welcomeScreen) {
         chatArea.appendChild(welcomeScreen);
