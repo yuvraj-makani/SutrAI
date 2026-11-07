@@ -2,19 +2,31 @@
 import os
 import httpx
 import subprocess
-
-from fastapi import UploadFile, File, HTTPException
+from google import genai
 from dotenv import load_dotenv
+from fastapi import UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from gnani.tts import GnaniTTSClient, AudioConfig
 from fastapi.responses import Response
+from google.genai import types
 from fastapi import FastAPI
 
 # Load environment variables from .env
 load_dotenv()
 
-# Create the FastAPI application
+gemini_client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    http_options=types.HttpOptions(
+        retry_options=types.HttpRetryOptions(
+            attempts=2,
+            initial_delay=0.5,
+            max_delay=2.0,
+        )
+    )
+)
+
+# Create the FastAPI application 
 app = FastAPI(
     title="SutrAI",
     description="Voice-first AI assistant for understanding documents",
@@ -216,3 +228,23 @@ def generate_speech(request: TTSRequest):
         )
 
 
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/chat")
+def chat_with_gemini(request: ChatRequest):
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=request.message,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(
+                    thinking_level="LOW"
+        )
+    )
+)
+
+        return {"reply": response.text}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
