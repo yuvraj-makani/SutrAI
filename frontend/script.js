@@ -1,5 +1,6 @@
 
 const API_BASE = "http://127.0.0.1:8000";
+let chatHistory = [];
 
 // DOM Elements
 const chatArea = document.getElementById("chatArea");
@@ -107,6 +108,10 @@ async function sendMessage() {
     sendBtn.disabled = true;
 
     addMessage(text, "user");
+    chatHistory.push({
+    role: "user",
+    parts: [{ text: text }]
+    });
 
     messageInput.value = "";
     messageInput.style.height = "28px";
@@ -125,7 +130,8 @@ async function sendMessage() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                message: text
+                    message: text,
+                    history: chatHistory
             })
         });
 
@@ -143,6 +149,10 @@ async function sendMessage() {
         // Replace loading message with actual AI reply
         loadingMessage.querySelector(".message-content").textContent =
             result.reply;
+        chatHistory.push({
+            role: "model",
+            parts: [{ text: result.reply }]
+        });
 
         // Convert AI response into voice
         await speakText(result.reply);
@@ -275,6 +285,7 @@ async function toggleRecording() {
 // New Conversation
 function newConversation() {
     chatArea.innerHTML = "";
+    chatHistory = [];
 
     if (welcomeScreen) {
         chatArea.appendChild(welcomeScreen);

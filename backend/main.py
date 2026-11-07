@@ -230,13 +230,17 @@ def generate_speech(request: TTSRequest):
 
 class ChatRequest(BaseModel):
     message: str
+    history: list[dict] = []
 
 @app.post("/api/chat")
 def chat_with_gemini(request: ChatRequest):
     try:
         response = gemini_client.models.generate_content(
             model="gemini-3.5-flash-lite",
-            contents=request.message,
+            contents=[
+                *request.history,
+                {"role": "user", "parts": [{"text": request.message}]}
+            ],
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(
                     thinking_level="LOW"
