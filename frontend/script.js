@@ -97,7 +97,7 @@ async function speakText(text) {
 }
 
 
-// Send text message
+// Send text message to AI
 async function sendMessage() {
     const text = messageInput.value.trim();
 
@@ -111,12 +111,50 @@ async function sendMessage() {
     messageInput.value = "";
     messageInput.style.height = "28px";
 
-    // Current backend does not yet provide AI chat responses.
-    // For now, the entered text is converted into speech.
-    addMessage("Aapke text ko voice mein convert kar raha hoon...", "assistant");
+    const loadingMessage = addMessage(
+        "SutrAI soch raha hai...",
+        "assistant"
+    );
 
     try {
-        await speakText(text);
+        showStatus("Thinking...");
+
+        const response = await fetch(`${API_BASE}/api/chat`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: text
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || "AI API failed");
+        }
+
+        const result = await response.json();
+
+        if (!result.reply) {
+            throw new Error("No AI response received");
+        }
+
+        // Replace loading message with actual AI reply
+        loadingMessage.querySelector(".message-content").textContent =
+            result.reply;
+
+        // Convert AI response into voice
+        await speakText(result.reply);
+
+    } catch (error) {
+        console.error("AI Chat Error:", error);
+
+        loadingMessage.querySelector(".message-content").textContent =
+            "SutrAI error: " + error.message;
+
+        showStatus("AI response failed");
+
     } finally {
         isBusy = false;
         sendBtn.disabled = false;
