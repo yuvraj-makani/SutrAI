@@ -652,3 +652,52 @@ button {
         right: 15px;
     }
 }
+
+
+/* SUTRAI LIGHT THEME — COBALT BLUE + NEON YELLOW */
+:root {
+ --bg:#F5F8FF; --sidebar:#0647B8; --surface:#FFFFFF; --surface-hover:#EAF1FF;
+ --border:rgba(12,49,112,.12); --text:#12213A; --muted:#64748B;
+ --primary:#0647B8; --primary-light:#EFFF00; --glow:rgba(239,255,0,.28);
+}
+body{background:var(--bg);color:var(--text)}
+.sidebar{background:linear-gradient(180deg,#0647B8 0%,#073A91 100%);border-right:1px solid rgba(255,255,255,.12);color:#fff}
+.brand-icon{background:linear-gradient(135deg,#EFFF00,#D9F000);color:#06327D;box-shadow:0 0 22px rgba(239,255,0,.20)}
+.brand span,.profile small{color:rgba(255,255,255,.70)}
+.new-chat-btn{background:#EFFF00;color:#082D72;box-shadow:0 5px 22px rgba(239,255,0,.20)}
+.new-chat-btn:hover{box-shadow:0 8px 28px rgba(239,255,0,.30)}
+.section-label{color:rgba(255,255,255,.58)}
+.sidebar-item{color:rgba(255,255,255,.76)}
+.sidebar-item:hover{background:rgba(255,255,255,.10);color:#fff}
+.sidebar-item.active{background:rgba(239,255,0,.13);color:#EFFF00;border:1px solid rgba(239,255,0,.28)}
+.avatar{background:linear-gradient(135deg,#EFFF00,#fff);color:#0647B8}
+.main-content{background:radial-gradient(ellipse at 50% 20%,rgba(6,71,184,.055),transparent 60%),var(--bg)}
+.topbar{background:rgba(255,255,255,.78);border-bottom:1px solid var(--border);backdrop-filter:blur(14px)}
+.status-text{color:#64748B}
+.language-badge{background:#fff;border:1px solid var(--border);color:#0647B8}
+.chat-area{scrollbar-color:#B7C9EA transparent}
+.orb{background:radial-gradient(circle at 30% 25%,#fff,transparent 30%),radial-gradient(circle at 70% 70%,#EFFF00,transparent 50%),linear-gradient(135deg,#3D82F6,#0647B8);box-shadow:0 0 30px rgba(6,71,184,.22),0 0 70px rgba(239,255,0,.15),inset 0 0 20px rgba(255,255,255,.30)}
+.welcome-icon::before,.welcome-icon::after{border-color:rgba(6,71,184,.20)}
+.welcome-icon::after{border-color:rgba(239,255,0,.38)}
+.welcome-label{color:#0647B8}
+.welcome-screen h1{color:#12213A}
+.welcome-screen h1 span{background:linear-gradient(90deg,#0647B8,#2D75E8,#8BAA00);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome-screen p{color:#64748B}
+.suggestion-card{background:rgba(255,255,255,.90);border:1px solid rgba(6,71,184,.12);box-shadow:0 8px 24px rgba(19,48,94,.045)}
+.suggestion-card:hover{border-color:rgba(6,71,184,.35);background:#F0F5FF}
+.suggestion-card strong{color:#12213A}.suggestion-card small{color:#64748B}
+.message.user .message-content{background:linear-gradient(135deg,#0647B8,#1768E8);color:#fff;box-shadow:0 6px 18px rgba(6,71,184,.12)}
+.message.assistant .message-content{background:#fff;border:1px solid rgba(6,71,184,.12);color:#172641;box-shadow:0 8px 24px rgba(19,48,94,.045)}
+.message-avatar{background:#EFFF00;color:#0647B8;border:1px solid rgba(6,71,184,.10)}
+.input-box{background:rgba(255,255,255,.96);border:1px solid rgba(6,71,184,.18);box-shadow:0 12px 34px rgba(19,48,94,.08)}
+.input-box:focus-within{border-color:#0647B8;box-shadow:0 0 0 3px rgba(6,71,184,.08),0 12px 34px rgba(19,48,94,.08)}
+#messageInput{color:#12213A}#messageInput::placeholder{color:#8A98AE}
+.left-actions span{color:#64748B}
+.mic-btn{background:#EFFF00;border:1px solid rgba(6,71,184,.14);color:#0647B8}
+.mic-btn:hover{background:#E2F500}
+.mic-btn.recording{background:#EF4444;color:#fff}
+.send-btn{background:linear-gradient(135deg,#0647B8,#1768E8);color:#EFFF00;box-shadow:0 0 16px rgba(6,71,184,.18)}
+.send-btn:hover{box-shadow:0 0 20px rgba(6,71,184,.25)}
+.footer-note{color:#8A98AE}
+#audioPlayer{accent-color:#0647B8}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
