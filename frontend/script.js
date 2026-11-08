@@ -21,6 +21,7 @@ const docChip = document.getElementById("docChip");
 const docName = document.getElementById("docName");
 const removeDocBtn = document.getElementById("removeDocBtn");
 const historyList = document.getElementById("historyList");
+const themeToggle = document.getElementById("themeToggle");
 
 let mediaRecorder = null;
 let audioChunks = [];
@@ -561,6 +562,29 @@ function newConversation() {
 
     loadHistoryList();
 }
+
+
+// Light / dark theme
+function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+
+    try {
+        localStorage.setItem("sutrai_theme", theme);
+    } catch (error) {
+        console.error("Could not save theme:", error);
+    }
+
+    const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    themeToggle.title = label;
+    themeToggle.setAttribute("aria-label", label);
+}
+
+themeToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+});
+
+applyTheme(document.documentElement.getAttribute("data-theme") || "dark");
 
 
 // Event Listeners
