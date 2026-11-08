@@ -1,46 +1,64 @@
-
 import os
-import httpx
-import subprocess
 import json
-from google import genai
+import subprocess
+
+import httpx
 from dotenv import load_dotenv
-from fastapi import UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from gnani.tts import GnaniTTSClient, AudioConfig
 from fastapi.responses import Response
+from google import genai
 from google.genai import types
-from fastapi import FastAPI
+from gnani.tts import GnaniTTSClient, AudioConfig
+from pydantic import BaseModel
 
 # Load environment variables from .env
 load_dotenv()
 
-MEMORY_FILE = "chat_memory.json"
+# ---------------------------------------------------------------------------
+# MEMORY FILES
+# They are stored OUTSIDE the project folder (in ~/sutrai_data).
+# Reason: VS Code Live Server reloads the page whenever ANY file in the
+# project folder changes. Saving chat_memory.json right before the reply
+# was sent is what made your page refresh.
+# ---------------------------------------------------------------------------
+DATA_DIR = os.path.join(os.path.expanduser("~"), "sutrai_data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
-def load_memory():
-    if not os.path.exists(MEMORY_FILE):
+MEMORY_FILE = os.path.join(DATA_DIR, "chat_memory.json")
+USER_MEMORY_FILE = os.path.join(DATA_DIR, "user_memory.json")
+
+
+def _load_json(path):
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except (json.JSONDecodeError, OSError):
         return {}
 
-    with open(MEMORY_FILE, "r", encoding="utf-8") as file:
-        return json.load(file)
+
+def _save_json(path, data):
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=2)
+
+
+def load_memory():
+    return _load_json(MEMORY_FILE)
 
 
 def save_memory(memory):
-    with open(MEMORY_FILE, "w", encoding="utf-8") as file:
-        json.dump(memory, file, ensure_ascii=False, indent=2)
+    _save_json(MEMORY_FILE, memory)
 
-USER_MEMORY_FILE = "user_memory.json"
 
 def load_user_memory():
-    if os.path.exists(USER_MEMORY_FILE):
-        with open(USER_MEMORY_FILE, "r", encoding="utf-8") as file:
-            return json.load(file)
-    return {}
+    return _load_json(USER_MEMORY_FILE)
+
 
 def save_user_memory(memory):
-    with open(USER_MEMORY_FILE, "w", encoding="utf-8") as file:
-        json.dump(memory, file, ensure_ascii=False, indent=4) 
+    _save_json(USER_MEMORY_FILE, memory)
+
 
 gemini_client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"),
@@ -53,7 +71,9 @@ gemini_client = genai.Client(
     )
 )
 
-# Create the FastAPI application 
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+
+# Create the FastAPI application
 app = FastAPI(
     title="SutrAI",
     description="Voice-first AI assistant for understanding documents",
@@ -68,6 +88,7 @@ app.add_middleware(
         "http://127.0.0.1:5501",
         "http://localhost:5501",
         "http://127.0.0.1:5502",
+        "http://localhost:5502",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -83,17 +104,19 @@ def home():
     return {
         "project": "SutrAI",
         "status": "Backend is running",
-        "api_key_configured": bool(GNANI_API_KEY)
+        "api_key_configured": bool(GNANI_API_KEY),
+        "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY"))
     }
 
 
 @app.get("/api/health")
 def health_check():
-    return {
-        "status": "healthy"
-    }
+    return {"status": "healthy"}
 
 
+# ---------------------------------------------------------------------------
+# SPEECH TO TEXT
+# ---------------------------------------------------------------------------
 @app.post("/api/transcribe")
 async def transcribe_audio(audio_file: UploadFile = File(...)):
     if not GNANI_API_KEY:
@@ -105,12 +128,9 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
     audio_content = await audio_file.read()
 
     if not audio_content:
-        raise HTTPException(
-            status_code=400,
-            detail="Audio file is empty"
-        )
+        raise HTTPException(status_code=400, detail="Audio file is empty")
 
-    # Convert WebM audio to WAV using FFmpeg
+    # Convert WebM/MP4 audio to WAV using FFmpeg
     try:
         conversion = subprocess.run(
             [
@@ -125,23 +145,20 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
             capture_output=True,
             check=True
         )
-
         wav_content = conversion.stdout
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=500,
+            detail="FFmpeg is not installed on the server"
+        )
 
     except subprocess.CalledProcessError as e:
         print("FFmpeg Error:", e.stderr.decode(errors="ignore"))
-
-        raise HTTPException(
-            status_code=400,
-            detail="Audio conversion failed"
-        )
+        raise HTTPException(status_code=400, detail="Audio conversion failed")
 
     files = {
-        "audio_file": (
-            "recording.wav",
-            wav_content,
-            "audio/wav"
-        )
+        "audio_file": ("recording.wav", wav_content, "audio/wav")
     }
 
     data = {
@@ -151,9 +168,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
         "itn_native_numerals": "true"
     }
 
-    headers = {
-        "X-API-Key-ID": GNANI_API_KEY
-    }
+    headers = {"X-API-Key-ID": GNANI_API_KEY}
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -179,7 +194,6 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
     except httpx.HTTPStatusError as e:
         print("Gnani API Status:", e.response.status_code)
         print("Gnani API Error:", e.response.text)
-
         raise HTTPException(
             status_code=502,
             detail=f"Gnani API Error: {e.response.status_code} - {e.response.text}"
@@ -187,15 +201,15 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
 
     except httpx.RequestError as e:
         print("Gnani Connection Error:", str(e))
-
         raise HTTPException(
             status_code=502,
             detail=f"Unable to connect to Gnani API: {str(e)}"
         )
 
 
-    
-# Text-to-Speech Request Model
+# ---------------------------------------------------------------------------
+# TEXT TO SPEECH
+# ---------------------------------------------------------------------------
 class TTSRequest(BaseModel):
     text: str
     language: str = "hi-IN"
@@ -203,7 +217,6 @@ class TTSRequest(BaseModel):
     speed: float = 1.0
 
 
-# Text-to-Speech API
 @app.post("/api/tts")
 def generate_speech(request: TTSRequest):
 
@@ -214,10 +227,7 @@ def generate_speech(request: TTSRequest):
         )
 
     if not request.text.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Text cannot be empty"
-        )
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
 
     if not 0.85 <= request.speed <= 1.15:
         raise HTTPException(
@@ -256,23 +266,81 @@ def generate_speech(request: TTSRequest):
         )
 
 
+# ---------------------------------------------------------------------------
+# CHAT (GEMINI) + MEMORY
+# ---------------------------------------------------------------------------
 class ChatRequest(BaseModel):
     message: str
     session_id: str
 
-@app.post("/api/chat")
-def chat_with_gemini(request: ChatRequest):
-    memory = load_memory()
-    history = memory.get(request.session_id, [])
-    user_memory = load_user_memory()
-    user_facts = user_memory.get("facts", [])
+
+def parse_facts(text):
+    """Gemini often wraps JSON in ```json fences. Remove them, then parse."""
+    text = (text or "").strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.lower().startswith("json"):
+            text = text[4:]
+        text = text.strip()
+    facts = json.loads(text)
+    if not isinstance(facts, list):
+        return []
+    return [f.strip() for f in facts if isinstance(f, str) and f.strip()]
+
+
+def extract_and_save_facts(message: str):
+    """Runs AFTER the reply is sent, so the user never waits for it."""
     try:
-        memory_context = "User's long-term memory: " + json.dumps(
-            user_facts, ensure_ascii=False
+        extraction_prompt = f"""
+        Extract important long-term facts about the user from this message.
+        Save useful facts like name, education, interests, preferences, and goals.
+        Ignore temporary details.
+        Return only a JSON array of short strings.
+        If there are no useful facts, return [].
+
+        User message: {message}
+        """
+
+        extraction_response = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=extraction_prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            ),
         )
 
+        new_facts = parse_facts(extraction_response.text)
+        if not new_facts:
+            return
+
+        user_memory = load_user_memory()
+        user_facts = user_memory.get("facts", [])
+
+        for fact in new_facts:
+            if fact not in user_facts:
+                user_facts.append(fact)
+
+        user_memory["facts"] = user_facts
+        save_user_memory(user_memory)
+
+    except Exception as e:
+        # Memory is a bonus feature: never let it break the chat.
+        print("Memory extraction skipped:", str(e))
+
+
+@app.post("/api/chat")
+def chat_with_gemini(request: ChatRequest, background_tasks: BackgroundTasks):
+    memory = load_memory()
+    history = memory.get(request.session_id, [])
+    user_facts = load_user_memory().get("facts", [])
+
+    memory_context = "User's long-term memory: " + json.dumps(
+        user_facts, ensure_ascii=False
+    )
+
+    try:
         response = gemini_client.models.generate_content(
-            model="gemini-3.5-flash-lite",
+            model=GEMINI_MODEL,
             contents=[
                 *history,
                 {
@@ -292,48 +360,22 @@ def chat_with_gemini(request: ChatRequest):
                 )
             ),
         )
-        history.append({
-            "role": "user",
-            "parts": [{"text": request.message}]
-        })
 
-        history.append({
-            "role": "model",
-            "parts": [{"text": response.text}]
-         })
-
-        extraction_prompt = f"""
-        Extract important long-term facts about the user from this message.
-        Save useful facts like name, education, interests, preferences, and goals.
-        Ignore temporary details.
-        Return only a JSON array of short strings.
-        If there are no useful facts, return [].
-
-        User message: {request.message}
-        """
-
-        extraction_response = gemini_client.models.generate_content(
-            model="gemini-3.5-flash-lite",
-            contents=extraction_prompt
-        )
-
-        try:
-            extracted_facts = json.loads(extraction_response.text)
-
-            if extracted_facts:
-                for fact in extracted_facts:
-                    if fact not in user_facts:
-                        user_facts.append(fact)
-
-                user_memory["facts"] = user_facts
-                save_user_memory(user_memory)
-
-        except json.JSONDecodeError:
-            pass
-
-        memory[request.session_id] = history
-        save_memory(memory)
-        return {"reply": response.text}
+        reply = response.text
+        if not reply:
+            raise ValueError("Gemini returned an empty response")
 
     except Exception as e:
+        print("Gemini Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+    # Save chat history
+    history.append({"role": "user", "parts": [{"text": request.message}]})
+    history.append({"role": "model", "parts": [{"text": reply}]})
+    memory[request.session_id] = history
+    save_memory(memory)
+
+    # Learn long-term facts in the background
+    background_tasks.add_task(extract_and_save_facts, request.message)
+
+    return {"reply": reply}

@@ -1,4 +1,3 @@
-
 const API_BASE = "http://127.0.0.1:8000";
 let chatHistory = [];
 let sessionId = localStorage.getItem("sutrai_session_id");
@@ -73,7 +72,7 @@ async function speakText(text) {
             },
             body: JSON.stringify({
                 text: text,
-                language_code: "hi-IN"
+                language: "hi-IN"
             })
         });
 
@@ -160,7 +159,7 @@ async function sendMessage() {
         });
 
         // Convert AI response into voice
-        // await speakText(result.reply);
+        await speakText(result.reply);
 
     } catch (error) {
         console.error("AI Chat Error:", error);
