@@ -20,6 +20,7 @@ const fileInput = document.getElementById("fileInput");
 const docChip = document.getElementById("docChip");
 const docName = document.getElementById("docName");
 const removeDocBtn = document.getElementById("removeDocBtn");
+const historyList = document.getElementById("historyList");
 
 let mediaRecorder = null;
 let audioChunks = [];
@@ -62,6 +63,7 @@ function showStatus(message) {
     recordingStatus.textContent = message;
 }
 
+
 // Long answers: speak only the first part (full text stays on screen)
 function shortenForSpeech(text) {
     const LIMIT = 600;
@@ -76,6 +78,7 @@ function shortenForSpeech(text) {
 
     return lastStop > 200 ? cut.slice(0, lastStop + 1) : cut;
 }
+
 
 // Text to Speech
 async function speakText(text) {
@@ -177,6 +180,9 @@ async function sendMessage() {
             role: "model",
             parts: [{ text: result.reply }]
         });
+
+        // Update the recent-chats list (new chats get their title here)
+        loadHistoryList();
 
         // Convert AI response into voice
         await speakText(result.reply);
@@ -404,6 +410,137 @@ async function checkExistingDocument() {
 }
 
 
+// ---------- Recent chats (history sidebar) ----------
+
+async function loadHistoryList() {
+    try {
+        const response = await fetch(`${API_BASE}/api/sessions`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        historyList.innerHTML = "";
+
+        if (!data.sessions.length) {
+            const empty = document.createElement("div");
+            empty.className = "history-empty";
+            empty.textContent = "Abhi koi purani chat nahi hai";
+            historyList.appendChild(empty);
+            return;
+        }
+
+        data.sessions.forEach(session => {
+            const item = document.createElement("div");
+            item.className = "history-item";
+            if (session.session_id === sessionId) {
+                item.classList.add("active");
+            }
+
+            const title = document.createElement("span");
+            title.className = "history-title";
+            title.textContent = session.title;
+            title.title = session.title;
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.type = "button";
+            deleteBtn.className = "history-delete";
+            deleteBtn.title = "Delete chat";
+            deleteBtn.textContent = "✕";
+
+            item.addEventListener("click", () => openSession(session.session_id));
+
+            deleteBtn.addEventListener("click", (event) => {
+                event.stopPropagation();
+                deleteSession(session.session_id);
+            });
+
+            item.appendChild(title);
+            item.appendChild(deleteBtn);
+            historyList.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error("History load failed:", error);
+    }
+}
+
+
+async function fetchSession(id) {
+    const response = await fetch(`${API_BASE}/api/sessions/${id}`);
+
+    if (!response.ok) {
+        throw new Error("Could not load this chat");
+    }
+
+    return response.json();
+}
+
+
+function renderSession(id, data) {
+    sessionId = id;
+    localStorage.setItem("sutrai_session_id", sessionId);
+
+    chatArea.innerHTML = "";
+    chatHistory = [];
+
+    data.messages.forEach(message => {
+        const sender = message.role === "model" ? "assistant" : "user";
+        addMessage(message.text, sender);
+        chatHistory.push({
+            role: message.role,
+            parts: [{ text: message.text }]
+        });
+    });
+
+    if (!data.messages.length && welcomeScreen) {
+        chatArea.appendChild(welcomeScreen);
+        welcomeScreen.style.display = "flex";
+    }
+
+    if (data.document) {
+        showDocument(data.document);
+    } else {
+        hideDocument();
+    }
+
+    messageInput.value = "";
+    audioPlayer.pause();
+    audioPlayer.hidden = true;
+    audioPlayer.removeAttribute("src");
+}
+
+
+async function openSession(id) {
+    if (isBusy || isRecording || id === sessionId) return;
+
+    try {
+        const data = await fetchSession(id);
+        renderSession(id, data);
+        showStatus("Voice Input");
+        loadHistoryList();
+    } catch (error) {
+        console.error("Open chat failed:", error);
+        showStatus("Could not open chat");
+    }
+}
+
+
+async function deleteSession(id) {
+    if (!confirm("Yeh chat delete kar dein?")) return;
+
+    try {
+        await fetch(`${API_BASE}/api/sessions/${id}`, { method: "DELETE" });
+    } catch (error) {
+        console.error("Delete chat failed:", error);
+    }
+
+    if (id === sessionId) {
+        newConversation();   // also refreshes the list
+    } else {
+        loadHistoryList();
+    }
+}
+
+
 // New Conversation
 function newConversation() {
     chatArea.innerHTML = "";
@@ -421,6 +558,8 @@ function newConversation() {
     audioPlayer.pause();
     audioPlayer.hidden = true;
     audioPlayer.removeAttribute("src");
+
+    loadHistoryList();
 }
 
 
@@ -472,3 +611,16 @@ document.querySelectorAll(".suggestion-card").forEach(card => {
 // Initial status
 showStatus("Voice Input");
 checkExistingDocument();
+
+// On page load: bring back the current chat (so a reload does not wipe the screen)
+(async function startup() {
+    try {
+        const data = await fetchSession(sessionId);
+        if (data.messages.length) {
+            renderSession(sessionId, data);
+        }
+    } catch (error) {
+        console.error("Restore chat failed:", error);
+    }
+    loadHistoryList();
+})();
