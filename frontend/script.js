@@ -160,7 +160,7 @@ async function sendMessage() {
         });
 
         // Convert AI response into voice
-        await speakText(result.reply);
+        // await speakText(result.reply);
 
     } catch (error) {
         console.error("AI Chat Error:", error);
@@ -307,7 +307,10 @@ function newConversation() {
 
 
 // Event Listeners
-sendBtn.addEventListener("click", sendMessage);
+sendBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendMessage();
+});
 
 micBtn.addEventListener("click", toggleRecording);
 

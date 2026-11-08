@@ -325,6 +325,70 @@
           "text": "Hello again! How's your day going? What can I help you with today?"
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hello"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! Echo... echo... 🎤 \n\nIs everything okay, or are you just testing my greeting circuits? Let me know what's on your mind!"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "mera favourite color kya hai"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Aapka favourite color **neon yellow** hai! 💛 \n\nBhool gaye kya? Ya test kar rahe the mujhe? 😉"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hello"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello, hello! 🔁 \n\nAisa lag raha hai hum kisi time loop mein fass gaye hain! 😂 \n\nBataiye, B.Tech IoT, neon yellow, ya kisi aur cheez ke baare mein baat karni hai? Ya bas hello bolne ka mann hai?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hello"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! 🤖✨ \n\nLagta hai aaj aapka \"Hello\" button atak gaya hai! \n\nChaliye, is loop ko todte hain. Bataiye, IoT ka koi project discuss karna hai, ya kuch aur sawaal hai?"
+        }
+      ]
     }
   ]
 }
