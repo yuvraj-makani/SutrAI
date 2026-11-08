@@ -193,6 +193,54 @@
           "text": "Arre bhai! Abhi thodi der pehle hi toh aapne bataya tha ki aapka favourite colour **yellow** hai, aur usse pehle aapne **neon yellow** bola tha! \n\nAb aap khud hi bhool gaye ya mera test le rahe ho? 😉 \n\nSach sach batao, in dono mein se final kaun sa hai—Neon Yellow ya Yellow?"
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "My favourite colour is neon yellow and I am studying B.Tech IoT."
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Acha ji! Phir se neon yellow par wapas aa gaye! 💛 Aur saath mein ekdum shaandar update diya—**B.Tech in IoT** (Internet of Things)! \n\nWah, yeh toh ekdum modern aur mast branch hai. Sensors, smart devices, automation... sab kuch connect karna hota hai ismein. \n\nToh kya irada hai? Koi aisi smart device banaoge jo neon yellow rang ki ho, ya apne project mein is colour ka use karoge? 😉"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "My favourite colour is neon yellow and I am studying B.Tech IoT."
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Haha, lagta hai aapka system aaj ek \"infinite loop\" mein fas gaya hai! Jaise programming mein `while(true)` chala dete hain! 😉\n\nPar koi baat nahi, combination sach mein mast hai: **Neon Yellow** (colour) + **B.Tech IoT** (future tech)! \n\nChaliye, ab is loop ko todte hain aur yeh batayein ki B.Tech IoT mein aapka favourite subject kaun sa hai?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "My favourite colour is neon yellow and I am studying B.Tech IoT."
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Arey error aa gaya lagta hai! 🤖 Aapka code lagataar wahi same line output de raha hai (lagta hai `while(true)` infinite loop chal gaya hai!).\n\nChaliye koi baat nahi, main is loop ko accept kar leta hoon:\n✨ Favourite colour = **Neon Yellow** 💛\n✨ Branch = **B.Tech IoT** 💻\n\nAb is loop se bahar nikalne ke liye ek naya variable add karo—yeh batao, aapka kaun sa semester chal raha hai? 😉"
+        }
+      ]
     }
   ],
   "c2bb0b12-074b-4622-b593-4e4e16c0d252": [
@@ -225,6 +273,56 @@
       "parts": [
         {
           "text": "Aapka favourite colour **neon yellow** hai! 💛✨ \n\nAbhi thodi دیر pehle hi toh aapne bataya tha. Kya aap mera test le rahe the? 😉"
+        }
+      ]
+    }
+  ],
+  "6482d1d1-720c-48b1-9a74-c818e09720c3": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "My favourite colour is neon yellow and I am studying B.Tech IoT.\n5."
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Got it! Neon yellow and B.Tech IoT (Internet of Things)—sounds like you're studying to build a very bright, connected future. \n\nWhat's the significance of the \"5\"? Are we counting down to something, solving a puzzle, or is it your lucky number? Let me know how I can help you today!"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hello"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! How can I help you today? Still thinking about neon yellow, IoT, or that mysterious \"5\"?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hello"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello again! How's your day going? What can I help you with today?"
         }
       ]
     }

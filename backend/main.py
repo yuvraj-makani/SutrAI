@@ -30,6 +30,18 @@ def save_memory(memory):
     with open(MEMORY_FILE, "w", encoding="utf-8") as file:
         json.dump(memory, file, ensure_ascii=False, indent=2)
 
+USER_MEMORY_FILE = "user_memory.json"
+
+def load_user_memory():
+    if os.path.exists(USER_MEMORY_FILE):
+        with open(USER_MEMORY_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+    return {}
+
+def save_user_memory(memory):
+    with open(USER_MEMORY_FILE, "w", encoding="utf-8") as file:
+        json.dump(memory, file, ensure_ascii=False, indent=4) 
+
 gemini_client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"),
     http_options=types.HttpOptions(
@@ -55,6 +67,7 @@ app.add_middleware(
         "http://localhost:5500",
         "http://127.0.0.1:5501",
         "http://localhost:5501",
+        "http://127.0.0.1:5502",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -251,28 +264,72 @@ class ChatRequest(BaseModel):
 def chat_with_gemini(request: ChatRequest):
     memory = load_memory()
     history = memory.get(request.session_id, [])
+    user_memory = load_user_memory()
+    user_facts = user_memory.get("facts", [])
     try:
+        memory_context = "User's long-term memory: " + json.dumps(
+            user_facts, ensure_ascii=False
+        )
+
         response = gemini_client.models.generate_content(
             model="gemini-3.5-flash-lite",
             contents=[
                 *history,
-                {"role": "user", "parts": [{"text": request.message}]}
+                {
+                    "role": "user",
+                    "parts": [
+                        {
+                            "text": memory_context
+                            + "\n\nUser's message: "
+                            + request.message
+                        }
+                    ],
+                },
             ],
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(
                     thinking_level="LOW"
+                )
+            ),
         )
-    )
-)
         history.append({
             "role": "user",
             "parts": [{"text": request.message}]
         })
 
         history.append({
-       "role": "model",
-       "parts": [{"text": response.text}]
-        })
+            "role": "model",
+            "parts": [{"text": response.text}]
+         })
+
+        extraction_prompt = f"""
+        Extract important long-term facts about the user from this message.
+        Save useful facts like name, education, interests, preferences, and goals.
+        Ignore temporary details.
+        Return only a JSON array of short strings.
+        If there are no useful facts, return [].
+
+        User message: {request.message}
+        """
+
+        extraction_response = gemini_client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=extraction_prompt
+        )
+
+        try:
+            extracted_facts = json.loads(extraction_response.text)
+
+            if extracted_facts:
+                for fact in extracted_facts:
+                    if fact not in user_facts:
+                        user_facts.append(fact)
+
+                user_memory["facts"] = user_facts
+                save_user_memory(user_memory)
+
+        except json.JSONDecodeError:
+            pass
 
         memory[request.session_id] = history
         save_memory(memory)
