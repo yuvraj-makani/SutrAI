@@ -15,6 +15,11 @@ const micBtn = document.getElementById("micBtn");
 const recordingStatus = document.getElementById("recordingStatus");
 const audioPlayer = document.getElementById("audioPlayer");
 const newChatBtn = document.getElementById("newChatBtn");
+const attachBtn = document.getElementById("attachBtn");
+const fileInput = document.getElementById("fileInput");
+const docChip = document.getElementById("docChip");
+const docName = document.getElementById("docName");
+const removeDocBtn = document.getElementById("removeDocBtn");
 
 let mediaRecorder = null;
 let audioChunks = [];
@@ -286,6 +291,104 @@ async function toggleRecording() {
 }
 
 
+// Show / hide the attached-document chip
+function showDocument(filename) {
+    docName.textContent = filename;
+    docChip.hidden = false;
+}
+
+function hideDocument() {
+    docName.textContent = "";
+    docChip.hidden = true;
+}
+
+
+// Upload a document (PDF / TXT / MD)
+async function uploadDocument() {
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+        showStatus("File too large (max 10 MB)");
+        addMessage("Yeh file bahut badi hai. 10 MB se chhoti file upload karo.", "assistant");
+        fileInput.value = "";
+        return;
+    }
+
+    try {
+        attachBtn.disabled = true;
+        showStatus("Reading document...");
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("session_id", sessionId);
+
+        const response = await fetch(`${API_BASE}/api/upload-document`, {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || "Upload failed");
+        }
+
+        const result = await response.json();
+
+        showDocument(result.filename);
+
+        let note = `Document "${result.filename}" ready hai. Ab aap isse sawal pooch sakte hain.`;
+        if (result.truncated) {
+            note += " (Document bahut lamba tha, isliye sirf shuruaati hissa padha gaya.)";
+        }
+        addMessage(note, "assistant");
+
+        showStatus("Document ready");
+
+    } catch (error) {
+        console.error("Upload Error:", error);
+        showStatus("Document upload failed");
+        addMessage("Document upload failed: " + error.message, "assistant");
+
+    } finally {
+        attachBtn.disabled = false;
+        fileInput.value = "";
+    }
+}
+
+
+// Remove the attached document
+async function removeDocument() {
+    try {
+        await fetch(`${API_BASE}/api/document/${sessionId}`, {
+            method: "DELETE"
+        });
+    } catch (error) {
+        console.error("Remove Document Error:", error);
+    }
+
+    hideDocument();
+    showStatus("Document removed");
+}
+
+
+// On page load: show the chip again if this session already has a document
+async function checkExistingDocument() {
+    try {
+        const response = await fetch(`${API_BASE}/api/document/${sessionId}`);
+        if (!response.ok) return;
+
+        const info = await response.json();
+        if (info.has_document) {
+            showDocument(info.filename);
+        }
+    } catch (error) {
+        console.error("Document check failed:", error);
+    }
+}
+
+
 // New Conversation
 function newConversation() {
     chatArea.innerHTML = "";
@@ -299,6 +402,7 @@ function newConversation() {
     }
 
     messageInput.value = "";
+    hideDocument();
     audioPlayer.pause();
     audioPlayer.hidden = true;
     audioPlayer.removeAttribute("src");
@@ -314,6 +418,12 @@ sendBtn.addEventListener("click", (event) => {
 micBtn.addEventListener("click", toggleRecording);
 
 newChatBtn.addEventListener("click", newConversation);
+
+attachBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", uploadDocument);
+
+removeDocBtn.addEventListener("click", removeDocument);
 
 
 // Enter to send, Shift + Enter for new line
@@ -346,3 +456,4 @@ document.querySelectorAll(".suggestion-card").forEach(card => {
 
 // Initial status
 showStatus("Voice Input");
+checkExistingDocument();

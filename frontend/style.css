@@ -701,3 +701,12 @@ body{background:var(--bg);color:var(--text)}
 .footer-note{color:#8A98AE}
 #audioPlayer{accent-color:#0647B8}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* DOCUMENT UPLOAD */
+.attach-btn{background:#fff;border:1px solid rgba(6,71,184,.18);font-size:17px}
+.attach-btn:hover{background:#EAF1FF}
+.attach-btn:disabled{opacity:.5;cursor:not-allowed}
+.doc-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;margin-bottom:10px;padding:6px 8px 6px 12px;background:#EFFF00;color:#082D72;border-radius:999px;font-size:12px;font-weight:600}
+.doc-chip[hidden]{display:none}
+.doc-chip #docName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px}
+.doc-chip button{background:rgba(6,71,184,.14);color:#082D72;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:20px;flex-shrink:0}
