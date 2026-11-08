@@ -493,7 +493,7 @@ function renderSession(id, data) {
 
     if (!data.messages.length && welcomeScreen) {
         chatArea.appendChild(welcomeScreen);
-        welcomeScreen.style.display = "flex";
+        welcomeScreen.style.display = "";
     }
 
     if (data.document) {
@@ -550,7 +550,7 @@ function newConversation() {
 
     if (welcomeScreen) {
         chatArea.appendChild(welcomeScreen);
-        welcomeScreen.style.display = "flex";
+        welcomeScreen.style.display = "";
     }
 
     messageInput.value = "";
