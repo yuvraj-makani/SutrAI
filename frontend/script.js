@@ -62,10 +62,25 @@ function showStatus(message) {
     recordingStatus.textContent = message;
 }
 
+// Long answers: speak only the first part (full text stays on screen)
+function shortenForSpeech(text) {
+    const LIMIT = 600;
+    if (text.length <= LIMIT) return text;
+
+    const cut = text.slice(0, LIMIT);
+    const lastStop = Math.max(
+        cut.lastIndexOf("."),
+        cut.lastIndexOf("।"),
+        cut.lastIndexOf("\n")
+    );
+
+    return lastStop > 200 ? cut.slice(0, lastStop + 1) : cut;
+}
 
 // Text to Speech
 async function speakText(text) {
     if (!text.trim()) return;
+    text = shortenForSpeech(text);
 
     try {
         showStatus("Generating voice...");
