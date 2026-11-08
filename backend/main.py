@@ -1,6 +1,7 @@
 import io
 import os
 import json
+import time
 import subprocess
 
 import httpx
@@ -30,6 +31,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 MEMORY_FILE = os.path.join(DATA_DIR, "chat_memory.json")
 USER_MEMORY_FILE = os.path.join(DATA_DIR, "user_memory.json")
 DOCUMENTS_FILE = os.path.join(DATA_DIR, "documents.json")
+SESSIONS_META_FILE = os.path.join(DATA_DIR, "sessions_meta.json")
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024   # 10 MB
 MAX_DOC_CHARS = 150_000               # text sent to Gemini
@@ -355,6 +357,74 @@ def remove_document(session_id: str):
 
 
 # ---------------------------------------------------------------------------
+# RECENT CHATS (history sidebar)
+# ---------------------------------------------------------------------------
+def make_title(text: str, limit: int = 40) -> str:
+    text = " ".join((text or "").split())
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "…"
+
+
+def first_user_text(history) -> str:
+    for message in history:
+        if message.get("role") == "user":
+            parts = message.get("parts") or []
+            if parts:
+                return parts[0].get("text", "")
+    return ""
+
+
+@app.get("/api/sessions")
+def list_sessions():
+    memory = load_memory()
+    meta = _load_json(SESSIONS_META_FILE)
+    sessions = []
+
+    # newest-saved first, so old chats without a timestamp still look sensible
+    for session_id, history in reversed(list(memory.items())):
+        if not history:
+            continue
+        entry = meta.get(session_id, {})
+        title = entry.get("title") or make_title(first_user_text(history)) or "New chat"
+        sessions.append({
+            "session_id": session_id,
+            "title": title,
+            "updated": entry.get("updated", 0)
+        })
+
+    sessions.sort(key=lambda item: item["updated"], reverse=True)
+    return {"sessions": sessions[:50]}
+
+
+@app.get("/api/sessions/{session_id}")
+def get_session(session_id: str):
+    history = load_memory().get(session_id, [])
+    messages = []
+
+    for message in history:
+        parts = message.get("parts") or []
+        text = parts[0].get("text", "") if parts else ""
+        messages.append({"role": message.get("role", "user"), "text": text})
+
+    doc = _load_json(DOCUMENTS_FILE).get(session_id)
+
+    return {
+        "messages": messages,
+        "document": doc["filename"] if doc else None
+    }
+
+
+@app.delete("/api/sessions/{session_id}")
+def delete_session(session_id: str):
+    for path in (MEMORY_FILE, SESSIONS_META_FILE, DOCUMENTS_FILE):
+        data = _load_json(path)
+        data.pop(session_id, None)
+        _save_json(path, data)
+    return {"success": True}
+
+
+# ---------------------------------------------------------------------------
 # CHAT (GEMINI) + MEMORY
 # ---------------------------------------------------------------------------
 class ChatRequest(BaseModel):
@@ -495,6 +565,15 @@ def chat_with_gemini(request: ChatRequest, background_tasks: BackgroundTasks):
     history.append({"role": "model", "parts": [{"text": reply}]})
     memory[request.session_id] = history
     save_memory(memory)
+
+    # Remember a title and the last-used time for the recent-chats list
+    meta = _load_json(SESSIONS_META_FILE)
+    entry = meta.get(request.session_id, {})
+    if not entry.get("title"):
+        entry["title"] = make_title(history[0]["parts"][0]["text"])
+    entry["updated"] = time.time()
+    meta[request.session_id] = entry
+    _save_json(SESSIONS_META_FILE, meta)
 
     # Learn long-term facts in the background
     background_tasks.add_task(extract_and_save_facts, request.message)
