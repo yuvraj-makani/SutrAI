@@ -5,7 +5,7 @@ SutrAI helps you understand documents by talking to them. Upload a PDF or text f
 Built by Yuvraj Makani and Aanya Aggarwal.
 
 - **Demo video:** [paste your video link here]
-- **One-page pitch:** [PITCH.md](PITCH.md)
+- **One-page pitch:** [Pitch.md](Pitch.md)
 
 ## Features
 
